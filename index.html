@@ -654,22 +654,6 @@
     </div>
   </div>
 
-  <!-- Halal Market mini-app (RTL Kurdish, Firebase synced list) -->
-  <section class="halal-market-container" dir="rtl" lang="ckb">
-    <h2>تۆمارکردنی ناو - Halal Market</h2>
-    
-    <input type="text" id="nameInput" placeholder="ناوەکەت لێرە بنووسە...">
-    <br>
-    <button id="addBtn">ناردنی ناو</button>
-
-    <hr>
-
-    <h3>لیستی ئامادەبووان (Sync):</h3>
-    <ul id="namesList">
-      <li>چاوەڕوانی داتا...</li>
-    </ul>
-  </section>
-
   <!-- Existing main app script -->
   <script>
     // Set document to English
@@ -2050,9 +2034,16 @@
       return manualCompanies;
     }
     
-    // Save manual companies to localStorage
+    // Save manual companies to localStorage (and Firebase if available)
     function saveManualCompanies() {
       localStorage.setItem('manualCompanies', JSON.stringify(manualCompanies));
+      if (typeof window.saveManualCompaniesToFirebase === 'function') {
+        try {
+          window.saveManualCompaniesToFirebase(manualCompanies);
+        } catch (e) {
+          console.warn('Failed to sync companies to Firebase:', e);
+        }
+      }
     }
     
     // Add a manual company (single)
@@ -3008,68 +2999,70 @@
     }
   </script>
 
-  <!-- Halal Market Firebase script -->
+  <!-- Firebase sync for Company Names List (uses existing design) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+    // Firebase config for Halal Market project
     const firebaseConfig = {
-            apiKey: "AIzaSyDvBBF92X70mRNjsgxwEjTYn87U8PsDYpk",
-            authDomain: "halal123.firebaseapp.com",
-            databaseURL: "https://halal123-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "halal123",
-            storageBucket: "halal123.firebasestorage.app",
-            messagingSenderId: "522778969164",
-            appId: "1:522778969164:web:17c7c6d5da5609ec3b60e9",
-            measurementId: "G-756BDKLG1Y"
-        };
-  
+      apiKey: "AIzaSyDvBBF92X70mRNjsgxwEjTYn87U8PsDYpk",
+      authDomain: "halal123.firebaseapp.com",
+      databaseURL: "https://halal123-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "halal123",
+      storageBucket: "halal123.firebasestorage.app",
+      messagingSenderId: "522778969164",
+      appId: "1:522778969164:web:17c7c6d5da5609ec3b60e9",
+      measurementId: "G-756BDKLG1Y"
+    };
 
-    const appHalal = initializeApp(firebaseConfigHalal, "halal-market-app");
+    // Initialize Firebase app for syncing manual companies list
+    const appHalal = initializeApp(firebaseConfig, "halal-market-app");
     const dbHalal = getDatabase(appHalal);
+    const companiesRef = ref(dbHalal, "manualCompanies");
 
-    const inputFieldHalal = document.getElementById('nameInput');
-    const addBtnHalal = document.getElementById('addBtn');
-    const namesListHalal = document.getElementById('namesList');
+    // Expose a helper so the main script can push local changes to Firebase
+    window.saveManualCompaniesToFirebase = function (manualCompanies) {
+      try {
+        // Store as simple array
+        set(companiesRef, manualCompanies || []);
+      } catch (e) {
+        console.error("Failed to save companies to Firebase:", e);
+      }
+    };
 
-    if (addBtnHalal && inputFieldHalal && namesListHalal) {
-      addBtnHalal.addEventListener('click', function () {
-        const nameValue = inputFieldHalal.value;
+    // Listen for remote changes and update the existing UI (original design)
+    onValue(companiesRef, (snapshot) => {
+      const data = snapshot.val();
+      const companies = Array.isArray(data)
+        ? data
+        : data
+        ? Object.values(data)
+        : [];
 
-        if (nameValue.trim() !== "") {
-          push(ref(dbHalal, 'people'), {
-            name: nameValue,
-            timestamp: new Date().toLocaleTimeString()
-          });
+      // Keep global manualCompanies in sync if it exists
+      if (Array.isArray(window.manualCompanies)) {
+        window.manualCompanies.length = 0;
+        window.manualCompanies.push(...companies);
+      } else {
+        window.manualCompanies = companies;
+      }
 
-          inputFieldHalal.value = "";
-        } else {
-          alert("تکایە ناوێک بنووسە!");
-        }
-      });
+      // Update localStorage cache without triggering the normal save function
+      try {
+        localStorage.setItem("manualCompanies", JSON.stringify(companies));
+      } catch (e) {
+        console.warn("Failed to cache companies in localStorage:", e);
+      }
 
-      const dbRefHalal = ref(dbHalal, 'people');
-      onValue(dbRefHalal, (snapshot) => {
-        namesListHalal.innerHTML = "";
-
-        const data = snapshot.val();
-
-        if (data) {
-          const dataArray = Object.values(data).reverse();
-
-          dataArray.forEach((person) => {
-            const li = document.createElement('li');
-            li.innerHTML = `
-              <span>${person.name}</span>
-              <span class="time">${person.timestamp}</span>
-            `;
-            namesListHalal.appendChild(li);
-          });
-        } else {
-          namesListHalal.innerHTML = "<li>هیچ ناوێک تۆمار نەکراوە</li>";
-        }
-      });
-    }
+      // Re-render existing lists using your original functions if available
+      if (typeof window.renderManualCompanies === "function") {
+        window.renderManualCompanies();
+      }
+      if (typeof window.updateMainPageCompaniesList === "function") {
+        window.updateMainPageCompaniesList();
+      }
+    });
   </script>
 </body>
 </html>
