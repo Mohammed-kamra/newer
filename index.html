@@ -3013,16 +3013,17 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const firebaseConfigHalal = {
-      apiKey: "AIzaSyDvBBF92X70mRNjsgxwEjTYn87U8PsDYpk",
-      authDomain: "halal123.firebaseapp.com",
-      databaseURL: "https://halal123-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "halal123",
-      storageBucket: "halal123.firebasestorage.app",
-      messagingSenderId: "522778969164",
-      appId: "1:522778969164:web:17c7c6d5da5609ec3b60e9",
-      measurementId: "G-756BDKLG1Y"
-    };
+    const firebaseConfig = {
+            apiKey: "AIzaSyDvBBF92X70mRNjsgxwEjTYn87U8PsDYpk",
+            authDomain: "halal123.firebaseapp.com",
+            databaseURL: "https://halal123-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "halal123",
+            storageBucket: "halal123.firebasestorage.app",
+            messagingSenderId: "522778969164",
+            appId: "1:522778969164:web:17c7c6d5da5609ec3b60e9",
+            measurementId: "G-756BDKLG1Y"
+        };
+  
 
     const appHalal = initializeApp(firebaseConfigHalal, "halal-market-app");
     const dbHalal = getDatabase(appHalal);
