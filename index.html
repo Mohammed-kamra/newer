@@ -3024,7 +3024,7 @@
       measurementId: "G-756BDKLG1Y"
     };
 
-    const appHalal = initializeApp(firebaseConfigHalal, "halal-market-app");
+    const appHalal = initializeApp(firebaseConfigHalal, databaseURL: "https://halal123-default-rtdb.europe-west1.firebasedatabase.app",);
     const dbHalal = getDatabase(appHalal);
 
     const inputFieldHalal = document.getElementById('nameInput');
